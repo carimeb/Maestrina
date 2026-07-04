@@ -1,17 +1,30 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/carimeb/Maestrina/main/schema/maestrina_output.schema.json",
+  "$id": "https://raw.githubusercontent.com/GITHUB_USER/Maestrina/main/schema/maestrina_output.schema.json",
   "title": "Maestrina Output Contract",
+  "$comment": "v2.1.0 adds the per-cluster 'sharding' block. The metadata-only approach for collecting sharded-cluster distribution through mongos is credited to Felipe Scabral's msizer-mongodb (https://github.com/felipesscabral/msizer-mongodb, getMongoSizingData_0.12.js).",
   "description": "Contract for the JSON file produced by either Maestrina collector (maestrina_collect.js via mongosh, or atlas_healthcheck.py via Atlas Admin API) and consumed by dashboard.html. Design rules: (1) both collectors emit the SAME structure; sections a mode cannot collect are present with available=false and data=null, so the dashboard can render gaps explicitly instead of hiding them; (2) only operational metadata and statistics are ever collected — no business data, no document contents, no query predicate values, no PII; (3) the file must be safe for a client security team to inspect before sending; (4) the collector never requires editing the script file itself (credentials come from the environment or interactive prompt), so the executed file can be hash-verified against the published version.",
   "type": "object",
-  "required": ["maestrina", "compliance_manifest", "target", "baseline", "clusters", "errors"],
+  "required": [
+    "maestrina",
+    "compliance_manifest",
+    "target",
+    "baseline",
+    "clusters",
+    "errors"
+  ],
   "additionalProperties": false,
   "properties": {
-
     "maestrina": {
       "type": "object",
       "description": "Provenance metadata: which collector produced this file, in which mode, when, and over what window.",
-      "required": ["schema_version", "collector", "collection_mode", "generated_at", "collection_window"],
+      "required": [
+        "schema_version",
+        "collector",
+        "collection_mode",
+        "generated_at",
+        "collection_window"
+      ],
       "additionalProperties": false,
       "properties": {
         "schema_version": {
@@ -21,12 +34,18 @@
         },
         "collector": {
           "type": "object",
-          "required": ["name", "version"],
+          "required": [
+            "name",
+            "version"
+          ],
           "additionalProperties": false,
           "properties": {
             "name": {
               "type": "string",
-              "enum": ["maestrina_collect.js", "atlas_healthcheck.py"]
+              "enum": [
+                "maestrina_collect.js",
+                "atlas_healthcheck.py"
+              ]
             },
             "version": {
               "type": "string",
@@ -36,7 +55,10 @@
         },
         "collection_mode": {
           "type": "string",
-          "enum": ["mongosh", "atlas_api"],
+          "enum": [
+            "mongosh",
+            "atlas_api"
+          ],
           "description": "mongosh = low-friction mode, run by the client DBA with a database-admin user against the cluster; atlas_api = full mode, requires a read-only Atlas Admin API key. Determines which sections can be available."
         },
         "generated_at": {
@@ -47,28 +69,47 @@
         "collection_window": {
           "type": "object",
           "description": "What time span the numbers represent. In atlas_api mode this is the historical metrics window (typically 30 days). In mongosh mode counters are cumulative since process start, optionally refined by an in-run double sample.",
-          "required": ["start", "end"],
+          "required": [
+            "start",
+            "end"
+          ],
           "additionalProperties": false,
           "properties": {
-            "start": { "type": "string", "format": "date-time" },
-            "end": { "type": "string", "format": "date-time" },
+            "start": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time"
+            },
             "second_sample_offset_seconds": {
-              "type": ["integer", "null"],
+              "type": [
+                "integer",
+                "null"
+              ],
               "description": "mongosh mode only: seconds between the two in-run samples used to compute real ops/s deltas. Null in atlas_api mode."
             },
             "server_uptime_seconds": {
-              "type": ["integer", "null"],
+              "type": [
+                "integer",
+                "null"
+              ],
               "description": "mongosh mode only: mongod uptime at collection time. Cumulative counters reset on restart/failover — the dashboard must caveat uptime-averaged rates when uptime is short."
             }
           }
         }
       }
     },
-
     "compliance_manifest": {
       "type": "object",
       "description": "Human-readable declaration of what this file does and does not contain, so the client's security team can review the output before it leaves their environment.",
-      "required": ["statement", "categories_collected", "categories_excluded", "pseudonymization"],
+      "required": [
+        "statement",
+        "categories_collected",
+        "categories_excluded",
+        "pseudonymization"
+      ],
       "additionalProperties": false,
       "properties": {
         "statement": {
@@ -98,7 +139,9 @@
         "categories_excluded": {
           "type": "array",
           "description": "Always emitted in full, regardless of mode.",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "default": [
             "document_contents",
             "query_predicate_values",
@@ -110,78 +153,164 @@
         "pseudonymization": {
           "type": "object",
           "description": "Optional masking of object names (namespaces, hosts, index names). When enabled, the mapping is generated and retained client-side only; Maestrina never receives it.",
-          "required": ["enabled"],
+          "required": [
+            "enabled"
+          ],
           "additionalProperties": false,
           "properties": {
-            "enabled": { "type": "boolean" },
+            "enabled": {
+              "type": "boolean"
+            },
             "method": {
-              "type": ["string", "null"],
-              "enum": ["sha256_trunc8", "sequential_labels", null],
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "sha256_trunc8",
+                "sequential_labels",
+                null
+              ],
               "description": "sha256_trunc8 = first 8 hex chars of SHA-256 of the name; sequential_labels = ns_001, host_A, etc."
             },
             "applies_to": {
               "type": "array",
-              "items": { "type": "string", "enum": ["namespaces", "hosts", "index_names", "database_names"] },
+              "items": {
+                "type": "string",
+                "enum": [
+                  "namespaces",
+                  "hosts",
+                  "index_names",
+                  "database_names"
+                ]
+              },
               "uniqueItems": true
             }
           }
         }
       }
     },
-
     "target": {
       "type": "object",
       "description": "Identification of the deployment analyzed. Atlas-specific fields are null in mongosh mode when not inferable.",
-      "required": ["cluster_name", "mongodb_version", "topology"],
+      "required": [
+        "cluster_name",
+        "mongodb_version",
+        "topology"
+      ],
       "additionalProperties": false,
       "properties": {
         "cluster_name": {
           "type": "string",
           "description": "Cluster or replica-set name; may be a pseudonym if pseudonymization is enabled."
         },
-        "mongodb_version": { "type": "string" },
-        "topology": { "type": "string", "enum": ["replica_set", "sharded_cluster", "standalone"] },
+        "mongodb_version": {
+          "type": "string"
+        },
+        "topology": {
+          "type": "string",
+          "enum": [
+            "replica_set",
+            "sharded_cluster",
+            "standalone"
+          ]
+        },
         "atlas": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "description": "Present in atlas_api mode; null in mongosh mode unless derivable from the connection.",
           "additionalProperties": false,
           "properties": {
-            "project_id": { "type": ["string", "null"] },
-            "instance_tier": { "type": ["string", "null"], "description": "e.g. M30" },
-            "provider": { "type": ["string", "null"], "description": "AWS | GCP | AZURE" },
-            "region": { "type": ["string", "null"] },
-            "autoscaling_compute_enabled": { "type": ["boolean", "null"] },
-            "autoscaling_disk_enabled": { "type": ["boolean", "null"] }
+            "project_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "instance_tier": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "e.g. M30"
+            },
+            "provider": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "AWS | GCP | AZURE"
+            },
+            "region": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "autoscaling_compute_enabled": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "autoscaling_disk_enabled": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
           }
         }
       }
     },
-
     "baseline": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Pre-go-live sizing band produced by the workload-fingerprinting playbook. Injected into the collector via a side file or CLI flag — never typed by the client. Null when no baseline exists (workload went to production without pre-sales sizing, which is precisely the population Maestrina targets). Feeds the realized-vs-forecast chart and turns post-go-live right-sizing into a planned milestone rather than a surprise.",
-      "required": ["source", "created_at", "bands", "checkpoints"],
+      "required": [
+        "source",
+        "created_at",
+        "bands",
+        "checkpoints"
+      ],
       "additionalProperties": false,
       "properties": {
         "source": {
           "type": "string",
           "description": "Free text identifying the sizing exercise, e.g. 'workload-fingerprinting 2026-05'."
         },
-        "created_at": { "type": "string", "format": "date-time" },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
         "bands": {
           "type": "object",
           "description": "min–expected–max confidence bands from reference-class forecasting. All fields optional; include what the sizing produced.",
           "additionalProperties": false,
           "properties": {
-            "monthly_cost_usd": { "$ref": "#/$defs/band" },
-            "peak_ops_per_sec": { "$ref": "#/$defs/band" },
-            "storage_gb": { "$ref": "#/$defs/band" },
-            "working_set_gb": { "$ref": "#/$defs/band" }
+            "monthly_cost_usd": {
+              "$ref": "#/$defs/band"
+            },
+            "peak_ops_per_sec": {
+              "$ref": "#/$defs/band"
+            },
+            "storage_gb": {
+              "$ref": "#/$defs/band"
+            },
+            "working_set_gb": {
+              "$ref": "#/$defs/band"
+            }
           }
         },
         "assumptions": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Explicit assumptions the band depends on, restated so deviations can be attributed."
         },
         "checkpoints": {
@@ -189,79 +318,168 @@
           "description": "Contractualized calibration checkpoints (Pillar 2).",
           "items": {
             "type": "object",
-            "required": ["day", "planned_date"],
+            "required": [
+              "day",
+              "planned_date"
+            ],
             "additionalProperties": false,
             "properties": {
-              "day": { "type": "integer", "description": "Days after go-live: 30, 60, 90." },
-              "planned_date": { "type": "string", "format": "date" },
-              "completed": { "type": "boolean", "default": false }
+              "day": {
+                "type": "integer",
+                "description": "Days after go-live: 30, 60, 90."
+              },
+              "planned_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "completed": {
+                "type": "boolean",
+                "default": false
+              }
             }
           }
         }
       }
     },
-
     "clusters": {
       "type": "array",
       "minItems": 1,
       "description": "One entry per cluster analyzed. mongosh mode always yields exactly one (the deployment the DBA connected to); atlas_api mode may yield several per project.",
       "items": {
         "type": "object",
-        "required": ["name", "workload", "availability", "efficiency", "financial", "alert_hygiene"],
+        "required": [
+          "name",
+          "workload",
+          "availability",
+          "efficiency",
+          "financial",
+          "alert_hygiene",
+          "sharding"
+        ],
         "additionalProperties": false,
         "properties": {
-          "name": { "type": "string" },
-
+          "name": {
+            "type": "string"
+          },
           "workload": {
-            "allOf": [{ "$ref": "#/$defs/section" }],
+            "allOf": [
+              {
+                "$ref": "#/$defs/section"
+              }
+            ],
             "description": "Measured rates and sizes — the same quantities the fingerprinting playbook measures pre-go-live, now realized. Available in BOTH modes.",
             "properties": {
               "available": {},
               "unavailable_reason": {},
               "data": {
-                "type": ["object", "null"],
+                "type": [
+                  "object",
+                  "null"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "rates": {
                     "type": "object",
-                    "required": ["method"],
+                    "required": [
+                      "method"
+                    ],
                     "additionalProperties": false,
                     "properties": {
                       "method": {
                         "type": "string",
-                        "enum": ["two_sample_delta", "uptime_average", "atlas_30d_series"],
+                        "enum": [
+                          "two_sample_delta",
+                          "uptime_average",
+                          "atlas_30d_series"
+                        ],
                         "description": "How ops/s was derived. two_sample_delta (mongosh, preferred) > atlas_30d_series (api) > uptime_average (mongosh fallback, weakest)."
                       },
                       "ops_per_sec": {
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
-                          "insert": { "type": ["number", "null"] },
-                          "query": { "type": ["number", "null"] },
-                          "update": { "type": ["number", "null"] },
-                          "delete": { "type": ["number", "null"] },
-                          "getmore": { "type": ["number", "null"] },
-                          "command": { "type": ["number", "null"] }
+                          "insert": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "query": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "update": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "delete": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "getmore": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "command": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          }
                         }
                       },
-                      "read_write_ratio": { "type": ["number", "null"] }
+                      "read_write_ratio": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
                     }
                   },
                   "storage": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
-                      "data_size_bytes": { "type": ["integer", "null"] },
-                      "storage_size_bytes": { "type": ["integer", "null"] },
-                      "index_size_bytes": { "type": ["integer", "null"] },
+                      "data_size_bytes": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "storage_size_bytes": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "index_size_bytes": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
                       "growth_30d_percent": {
-                        "type": ["number", "null"],
+                        "type": [
+                          "number",
+                          "null"
+                        ],
                         "description": "atlas_api mode: from disk metrics series. mongosh mode: null on first run; computable if a previous Maestrina JSON is supplied for delta."
                       }
                     }
                   },
                   "working_set_estimate_bytes": {
-                    "type": ["integer", "null"],
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
                     "description": "Proxy from WiredTiger cache occupancy vs configured cache."
                   },
                   "top_namespaces": {
@@ -269,13 +487,32 @@
                     "description": "Largest namespaces by total size. Names respect pseudonymization.",
                     "items": {
                       "type": "object",
-                      "required": ["namespace"],
+                      "required": [
+                        "namespace"
+                      ],
                       "additionalProperties": false,
                       "properties": {
-                        "namespace": { "type": "string" },
-                        "data_size_bytes": { "type": ["integer", "null"] },
-                        "index_size_bytes": { "type": ["integer", "null"] },
-                        "document_count": { "type": ["integer", "null"] }
+                        "namespace": {
+                          "type": "string"
+                        },
+                        "data_size_bytes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "index_size_bytes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "document_count": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        }
                       }
                     }
                   }
@@ -283,106 +520,234 @@
               }
             }
           },
-
           "availability": {
-            "allOf": [{ "$ref": "#/$defs/section" }],
+            "allOf": [
+              {
+                "$ref": "#/$defs/section"
+              }
+            ],
             "description": "Downtime-risk axis inputs. Mostly available in both modes; elections/restarts counts and disk utilization require atlas_api.",
             "properties": {
               "available": {},
               "unavailable_reason": {},
               "data": {
-                "type": ["object", "null"],
+                "type": [
+                  "object",
+                  "null"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "replication": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
-                      "max_lag_seconds": { "type": ["number", "null"] },
+                      "max_lag_seconds": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
                       "members": {
                         "type": "array",
                         "items": {
                           "type": "object",
-                          "required": ["member", "state"],
+                          "required": [
+                            "member",
+                            "state"
+                          ],
                           "additionalProperties": false,
                           "properties": {
-                            "member": { "type": "string", "description": "Host or pseudonym." },
-                            "state": { "type": "string", "description": "PRIMARY | SECONDARY | ..." },
-                            "lag_seconds": { "type": ["number", "null"] }
+                            "member": {
+                              "type": "string",
+                              "description": "Host or pseudonym."
+                            },
+                            "state": {
+                              "type": "string",
+                              "description": "PRIMARY | SECONDARY | ..."
+                            },
+                            "lag_seconds": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            }
                           }
                         }
                       }
                     }
                   },
-                  "oplog_window_hours": { "type": ["number", "null"] },
+                  "oplog_window_hours": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
                   "elections_last_30d": {
-                    "type": ["integer", "null"],
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
                     "description": "atlas_api mode only (events API). Frequent primary elections signal instability."
                   },
-                  "restarts_last_30d": { "type": ["integer", "null"], "description": "atlas_api mode only." },
+                  "restarts_last_30d": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "atlas_api mode only."
+                  },
                   "tickets": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
-                      "read_available": { "type": ["integer", "null"] },
-                      "write_available": { "type": ["integer", "null"] }
+                      "read_available": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "write_available": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      }
                     }
                   },
                   "connections": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
-                      "current": { "type": ["integer", "null"] },
-                      "available": { "type": ["integer", "null"] },
-                      "utilization_percent": { "type": ["number", "null"] }
+                      "current": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "available": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "utilization_percent": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
                     }
                   },
                   "disk": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
-                      "space_used_percent": { "type": ["number", "null"] },
-                      "util_percent_max_30d": { "type": ["number", "null"], "description": "atlas_api mode only (hardware metrics series)." }
+                      "space_used_percent": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "util_percent_max_30d": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "description": "atlas_api mode only (hardware metrics series)."
+                      }
                     }
                   },
-                  "page_faults_per_sec": { "type": ["number", "null"] }
+                  "page_faults_per_sec": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
                 }
               }
             }
           },
-
           "efficiency": {
-            "allOf": [{ "$ref": "#/$defs/section" }],
+            "allOf": [
+              {
+                "$ref": "#/$defs/section"
+              }
+            ],
             "description": "Churn/inefficiency axis. Global counters and index-usage stats work in both modes; Performance Advisor summaries require atlas_api. Dual output: each finding is a churn risk AND potentially an expansion signal (e.g. heavy $regex → Atlas Search).",
             "properties": {
               "available": {},
               "unavailable_reason": {},
               "data": {
-                "type": ["object", "null"],
+                "type": [
+                  "object",
+                  "null"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "query_targeting": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
-                      "keys_scanned_per_returned": { "type": ["number", "null"] },
-                      "objects_scanned_per_returned": { "type": ["number", "null"] },
+                      "keys_scanned_per_returned": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "objects_scanned_per_returned": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
                       "source": {
-                        "type": ["string", "null"],
-                        "enum": ["server_status_global", "atlas_metrics_30d", null],
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "server_status_global",
+                          "atlas_metrics_30d",
+                          null
+                        ],
                         "description": "server_status_global = cluster-wide cumulative ratio; atlas_metrics_30d = time series max/avg."
                       }
                     }
                   },
-                  "scan_and_order_per_sec": { "type": ["number", "null"] },
+                  "scan_and_order_per_sec": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
                   "cache": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
-                      "configured_bytes": { "type": ["integer", "null"] },
-                      "in_cache_bytes": { "type": ["integer", "null"] },
-                      "dirty_percent": { "type": ["number", "null"] },
-                      "fill_percent": { "type": ["number", "null"] }
+                      "configured_bytes": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "in_cache_bytes": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "dirty_percent": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "fill_percent": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      }
                     }
                   },
                   "unused_indexes": {
@@ -390,27 +755,71 @@
                     "description": "From $indexStats: indexes with zero (or near-zero) accesses since stats reset. Raw equivalent of Performance Advisor drop-index suggestions; works in mongosh mode.",
                     "items": {
                       "type": "object",
-                      "required": ["namespace", "index"],
+                      "required": [
+                        "namespace",
+                        "index"
+                      ],
                       "additionalProperties": false,
                       "properties": {
-                        "namespace": { "type": "string" },
-                        "index": { "type": "string" },
-                        "accesses_ops": { "type": ["integer", "null"] },
-                        "accesses_since": { "type": ["string", "null"], "format": "date-time" },
-                        "size_bytes": { "type": ["integer", "null"] }
+                        "namespace": {
+                          "type": "string"
+                        },
+                        "index": {
+                          "type": "string"
+                        },
+                        "accesses_ops": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "accesses_since": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "size_bytes": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        }
                       }
                     }
                   },
                   "performance_advisor": {
-                    "type": ["object", "null"],
+                    "type": [
+                      "object",
+                      "null"
+                    ],
                     "description": "atlas_api mode only. Counts only — no query shapes are exported, to keep the file free of anything resembling application queries.",
                     "additionalProperties": false,
                     "properties": {
-                      "suggested_indexes_count": { "type": ["integer", "null"] },
-                      "drop_index_suggestions_count": { "type": ["integer", "null"] },
-                      "schema_suggestions_count": { "type": ["integer", "null"] },
+                      "suggested_indexes_count": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "drop_index_suggestions_count": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "schema_suggestions_count": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
                       "data_platform_suggestions_count": {
-                        "type": ["integer", "null"],
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
                         "description": "e.g. heavy $regex usage suggesting Atlas Search — expansion signal, not just risk."
                       }
                     }
@@ -419,37 +828,76 @@
               }
             }
           },
-
           "financial": {
-            "allOf": [{ "$ref": "#/$defs/section" }],
+            "allOf": [
+              {
+                "$ref": "#/$defs/section"
+              }
+            ],
             "description": "Financial-risk axis. atlas_api mode ONLY: billing by SKU category plus 30-day series feeding the min–expected–max cost forecast. In mongosh mode: available=false, unavailable_reason='requires atlas_api mode (read-only API key)'.",
             "properties": {
               "available": {},
               "unavailable_reason": {},
               "data": {
-                "type": ["object", "null"],
+                "type": [
+                  "object",
+                  "null"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "billing_month_to_date": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
-                      "total_usd": { "type": ["number", "null"] },
+                      "total_usd": {
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
                       "by_sku_category": {
                         "type": "object",
                         "additionalProperties": false,
                         "properties": {
-                          "compute_usd": { "type": ["number", "null"] },
-                          "storage_usd": { "type": ["number", "null"] },
-                          "backup_usd": { "type": ["number", "null"] },
-                          "data_transfer_usd": { "type": ["number", "null"] },
-                          "other_usd": { "type": ["number", "null"] }
+                          "compute_usd": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "storage_usd": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "backup_usd": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "data_transfer_usd": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "other_usd": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          }
                         }
                       }
                     }
                   },
                   "backup_to_compute_ratio_percent": {
-                    "type": ["number", "null"],
+                    "type": [
+                      "number",
+                      "null"
+                    ],
                     "description": "Backup cost as % of compute cost. Thresholds in dashboard.html are Maestrina's own heuristics (no public MongoDB doc defines this ratio)."
                   },
                   "series": {
@@ -457,19 +905,40 @@
                     "description": "Historical series for regression-based forecast bands.",
                     "items": {
                       "type": "object",
-                      "required": ["metric", "unit", "granularity", "points"],
+                      "required": [
+                        "metric",
+                        "unit",
+                        "granularity",
+                        "points"
+                      ],
                       "additionalProperties": false,
                       "properties": {
-                        "metric": { "type": "string", "description": "e.g. cpu_percent, ops_total, disk_used_gb, cost_daily_usd" },
-                        "unit": { "type": "string" },
-                        "granularity": { "type": "string", "description": "ISO 8601 duration, e.g. PT1H, P1D" },
+                        "metric": {
+                          "type": "string",
+                          "description": "e.g. cpu_percent, ops_total, disk_used_gb, cost_daily_usd"
+                        },
+                        "unit": {
+                          "type": "string"
+                        },
+                        "granularity": {
+                          "type": "string",
+                          "description": "ISO 8601 duration, e.g. PT1H, P1D"
+                        },
                         "points": {
                           "type": "array",
                           "items": {
                             "type": "array",
                             "prefixItems": [
-                              { "type": "string", "format": "date-time" },
-                              { "type": ["number", "null"] }
+                              {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              }
                             ],
                             "minItems": 2,
                             "maxItems": 2
@@ -482,78 +951,213 @@
               }
             }
           },
-
           "alert_hygiene": {
-            "allOf": [{ "$ref": "#/$defs/section" }],
+            "allOf": [
+              {
+                "$ref": "#/$defs/section"
+              }
+            ],
             "description": "atlas_api mode ONLY: configured project alerts vs the recommended set (per MongoDB public documentation). In mongosh mode: available=false.",
             "properties": {
               "available": {},
               "unavailable_reason": {},
               "data": {
-                "type": ["object", "null"],
+                "type": [
+                  "object",
+                  "null"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "configured_count": { "type": ["integer", "null"] },
+                  "configured_count": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "recommended_missing": {
                     "type": "array",
-                    "items": { "type": "string" },
+                    "items": {
+                      "type": "string"
+                    },
                     "description": "Recommended alert event types not configured in the project."
                   }
                 }
+              }
+            }
+          },
+          "sharding": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Sharded-cluster distribution, collected via mongos from config metadata only (no user-collection queries). Null when topology is replica_set or standalone — null here MEANS 'not sharded', not 'unavailable'. Collection approach credited to Felipe Scabral's msizer-mongodb. Handles version differences: chunks keyed by UUID (5.0+), 'partitioned' flag removed (6.0+), unsplittable collections (8.0+), timeseries buckets; orphaned-docs data requires $shardedDataDistribution (6.0.3+).",
+            "additionalProperties": false,
+            "properties": {
+              "shards_count": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "balancer_enabled": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "balancer_running": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "sharded_collections_count": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "jumbo_chunks_count": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Jumbo chunks cannot be moved by the balancer — a downtime/imbalance risk input."
+              },
+              "data_distribution": {
+                "type": "array",
+                "description": "Per-shard share of data. Shard names respect pseudonymization.",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "shard"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "shard": {
+                      "type": "string"
+                    },
+                    "data_size_bytes": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "data_percent": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "chunks_count": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              },
+              "orphaned_docs_total": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Sum of orphaned documents across shards ($shardedDataDistribution, 6.0.3+). Orphans inflate storage and distort collection counts — an inefficiency signal."
+              },
+              "imbalance_percent": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Spread between most- and least-loaded shard as % of mean data per shard. Computed by the collector; threshold interpretation lives in the dashboard."
               }
             }
           }
         }
       }
     },
-
     "errors": {
       "type": "array",
       "description": "Commands/endpoints that failed during collection (pattern borrowed from getMongoData-style scripts). Collection never aborts on a single failure; the dashboard surfaces these so gaps are attributable.",
       "items": {
         "type": "object",
-        "required": ["source", "detail"],
+        "required": [
+          "source",
+          "detail"
+        ],
         "additionalProperties": false,
         "properties": {
-          "source": { "type": "string", "description": "Command or API endpoint, e.g. 'hostInfo', 'GET /groups/{id}/processes'." },
-          "detail": { "type": "string", "description": "Error message. Collectors must strip connection strings and credentials from messages before writing." },
-          "at": { "type": ["string", "null"], "format": "date-time" }
+          "source": {
+            "type": "string",
+            "description": "Command or API endpoint, e.g. 'hostInfo', 'GET /groups/{id}/processes'."
+          },
+          "detail": {
+            "type": "string",
+            "description": "Error message. Collectors must strip connection strings and credentials from messages before writing."
+          },
+          "at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
         }
       }
     }
   },
-
   "$defs": {
     "band": {
       "type": "object",
-      "required": ["min", "expected", "max"],
+      "required": [
+        "min",
+        "expected",
+        "max"
+      ],
       "additionalProperties": false,
       "properties": {
-        "min": { "type": "number" },
-        "expected": { "type": "number" },
-        "max": { "type": "number" }
+        "min": {
+          "type": "number"
+        },
+        "expected": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        }
       }
     },
     "section": {
       "type": "object",
       "description": "Every analytical section carries an explicit availability flag. When a mode cannot collect a section, it is emitted with available=false and a reason — the dashboard renders it greyed-out with the reason, never hidden.",
-      "required": ["available", "data"],
+      "required": [
+        "available",
+        "data"
+      ],
       "properties": {
-        "available": { "type": "boolean" },
+        "available": {
+          "type": "boolean"
+        },
         "unavailable_reason": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Required when available=false, e.g. 'requires atlas_api mode (read-only API key)'."
         },
         "data": {}
       }
     }
   },
-
   "examples": [
     {
       "maestrina": {
-        "schema_version": "2.0.0",
-        "collector": { "name": "maestrina_collect.js", "version": "2.0.0" },
+        "schema_version": "2.1.0",
+        "collector": {
+          "name": "maestrina_collect.js",
+          "version": "2.1.0"
+        },
         "collection_mode": "mongosh",
         "generated_at": "2026-07-04T14:22:00Z",
         "collection_window": {
@@ -582,7 +1186,10 @@
         "pseudonymization": {
           "enabled": true,
           "method": "sequential_labels",
-          "applies_to": ["namespaces", "hosts"]
+          "applies_to": [
+            "namespaces",
+            "hosts"
+          ]
         }
       },
       "target": {
@@ -595,14 +1202,36 @@
         "source": "workload-fingerprinting 2026-05",
         "created_at": "2026-05-12T00:00:00Z",
         "bands": {
-          "monthly_cost_usd": { "min": 4200, "expected": 5600, "max": 7800 },
-          "peak_ops_per_sec": { "min": 900, "expected": 1400, "max": 2200 }
+          "monthly_cost_usd": {
+            "min": 4200,
+            "expected": 5600,
+            "max": 7800
+          },
+          "peak_ops_per_sec": {
+            "min": 900,
+            "expected": 1400,
+            "max": 2200
+          }
         },
-        "assumptions": ["Peak window = monthly closing (last 3 business days)"],
+        "assumptions": [
+          "Peak window = monthly closing (last 3 business days)"
+        ],
         "checkpoints": [
-          { "day": 30, "planned_date": "2026-07-15", "completed": false },
-          { "day": 60, "planned_date": "2026-08-14", "completed": false },
-          { "day": 90, "planned_date": "2026-09-13", "completed": false }
+          {
+            "day": 30,
+            "planned_date": "2026-07-15",
+            "completed": false
+          },
+          {
+            "day": 60,
+            "planned_date": "2026-08-14",
+            "completed": false
+          },
+          {
+            "day": 90,
+            "planned_date": "2026-09-13",
+            "completed": false
+          }
         ]
       },
       "clusters": [
@@ -614,7 +1243,14 @@
             "data": {
               "rates": {
                 "method": "two_sample_delta",
-                "ops_per_sec": { "insert": 210.4, "query": 1130.2, "update": 96.1, "delete": 2.3, "getmore": 340.0, "command": 88.7 },
+                "ops_per_sec": {
+                  "insert": 210.4,
+                  "query": 1130.2,
+                  "update": 96.1,
+                  "delete": 2.3,
+                  "getmore": 340.0,
+                  "command": 88.7
+                },
                 "read_write_ratio": 4.8
               },
               "storage": {
@@ -625,7 +1261,12 @@
               },
               "working_set_estimate_bytes": 15032385536,
               "top_namespaces": [
-                { "namespace": "ns_001", "data_size_bytes": 128849018880, "index_size_bytes": 6442450944, "document_count": 91000000 }
+                {
+                  "namespace": "ns_001",
+                  "data_size_bytes": 128849018880,
+                  "index_size_bytes": 6442450944,
+                  "document_count": 91000000
+                }
               ]
             }
           },
@@ -636,17 +1277,39 @@
               "replication": {
                 "max_lag_seconds": 1.2,
                 "members": [
-                  { "member": "host_A", "state": "PRIMARY", "lag_seconds": null },
-                  { "member": "host_B", "state": "SECONDARY", "lag_seconds": 0.8 },
-                  { "member": "host_C", "state": "SECONDARY", "lag_seconds": 1.2 }
+                  {
+                    "member": "host_A",
+                    "state": "PRIMARY",
+                    "lag_seconds": null
+                  },
+                  {
+                    "member": "host_B",
+                    "state": "SECONDARY",
+                    "lag_seconds": 0.8
+                  },
+                  {
+                    "member": "host_C",
+                    "state": "SECONDARY",
+                    "lag_seconds": 1.2
+                  }
                 ]
               },
               "oplog_window_hours": 38.5,
               "elections_last_30d": null,
               "restarts_last_30d": null,
-              "tickets": { "read_available": 128, "write_available": 126 },
-              "connections": { "current": 812, "available": 4188, "utilization_percent": 16.2 },
-              "disk": { "space_used_percent": 61.0, "util_percent_max_30d": null },
+              "tickets": {
+                "read_available": 128,
+                "write_available": 126
+              },
+              "connections": {
+                "current": 812,
+                "available": 4188,
+                "utilization_percent": 16.2
+              },
+              "disk": {
+                "space_used_percent": 61.0,
+                "util_percent_max_30d": null
+              },
               "page_faults_per_sec": 0.4
             }
           },
@@ -667,7 +1330,13 @@
                 "fill_percent": 90.3
               },
               "unused_indexes": [
-                { "namespace": "ns_004", "index": "idx_legacy_replication", "accesses_ops": 0, "accesses_since": "2026-06-01T03:11:00Z", "size_bytes": 602931200 }
+                {
+                  "namespace": "ns_004",
+                  "index": "idx_legacy_replication",
+                  "accesses_ops": 0,
+                  "accesses_since": "2026-06-01T03:11:00Z",
+                  "size_bytes": 602931200
+                }
               ],
               "performance_advisor": null
             }
@@ -681,11 +1350,16 @@
             "available": false,
             "unavailable_reason": "requires atlas_api mode (read-only API key)",
             "data": null
-          }
+          },
+          "sharding": null
         }
       ],
       "errors": [
-        { "source": "hostInfo", "detail": "command not authorized on admin to execute", "at": "2026-07-04T14:20:05Z" }
+        {
+          "source": "hostInfo",
+          "detail": "command not authorized on admin to execute",
+          "at": "2026-07-04T14:20:05Z"
+        }
       ]
     }
   ]
