@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/GITHUB_USER/Maestrina/main/schema/maestrina_output.schema.json",
+  "$id": "https://raw.githubusercontent.com/carimeb/Maestrina/main/schema/maestrina_output.schema.json",
   "title": "Maestrina Output Contract",
   "$comment": "v2.1.0 adds the per-cluster 'sharding' block. The metadata-only approach for collecting sharded-cluster distribution through mongos is credited to Felipe Scabral's msizer-mongodb (https://github.com/felipesscabral/msizer-mongodb, getMongoSizingData_0.12.js).",
   "description": "Contract for the JSON file produced by either Maestrina collector (maestrina_collect.js via mongosh, or atlas_healthcheck.py via Atlas Admin API) and consumed by dashboard.html. Design rules: (1) both collectors emit the SAME structure; sections a mode cannot collect are present with available=false and data=null, so the dashboard can render gaps explicitly instead of hiding them; (2) only operational metadata and statistics are ever collected — no business data, no document contents, no query predicate values, no PII; (3) the file must be safe for a client security team to inspect before sending; (4) the collector never requires editing the script file itself (credentials come from the environment or interactive prompt), so the executed file can be hash-verified against the published version.",
