@@ -1,6 +1,6 @@
 # Maestrina
 
-**Health check pós-go-live de clusters MongoDB Atlas — para checkpoints de calibração de 30, 60 e 90 dias.**
+**Health check pós-go-live de clusters MongoDB Atlas para calibração de 30, 60 e 90 dias.**
 
 ---
 
